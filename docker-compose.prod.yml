@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aiops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-aiopsdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  backend:
+    image: ghcr.io/bintangwp99/resolve.ai-backend:latest
+    environment:
+      - SQLALCHEMY_DATABASE_URI=postgresql://${POSTGRES_USER:-aiops}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB:-aiopsdb}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    restart: always
+
+  frontend:
+    image: ghcr.io/bintangwp99/resolve.ai-frontend:latest
+    ports:
+      - "80:5173"
+    environment:
+      # Ganti YOUR_SERVER_IP dengan IP VPS / Domain Anda di production (.env)
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8000/api/v1}
+    restart: always
+
+volumes:
+  postgres_data:
